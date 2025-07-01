@@ -2,11 +2,15 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Activity, FileText, AlertTriangle } from "lucide-react";
+import { Shield, Activity, FileText, AlertTriangle, Settings } from "lucide-react";
 import ScanForm from "@/components/ScanForm";
 import ScanProgress from "@/components/ScanProgress";
 import ScanResults from "@/components/ScanResults";
 import RecentScans from "@/components/RecentScans";
+import ScanHistory from "@/components/ScanHistory";
+import ToolAvailabilityCheck from "@/components/ToolAvailabilityCheck";
+import DarkModeToggle from "@/components/DarkModeToggle";
+import LiveScanTerminal from "@/components/LiveScanTerminal";
 
 const Index = () => {
   const [currentScan, setCurrentScan] = useState(null);
@@ -31,7 +35,13 @@ const Index = () => {
         status: 'completed',
         endTime: new Date(),
         results: results,
-        progress: 100
+        progress: 100,
+        // Add history-specific fields
+        timestamp: new Date().toLocaleString(),
+        duration: results.scanTime || '0s',
+        vulnerabilities: results.vulnerabilities?.length || 0,
+        severity: results.vulnerabilities?.length > 0 ? 'High' : 'None',
+        scanTypes: currentScan.selectedScanTypes || []
       };
       setScanHistory(prev => [completedScan, ...prev.slice(0, 9)]);
       setCurrentScan(null);
@@ -46,7 +56,13 @@ const Index = () => {
         status: 'error',
         endTime: new Date(),
         error: error,
-        progress: 0
+        progress: 0,
+        // Add history-specific fields
+        timestamp: new Date().toLocaleString(),
+        duration: '0s',
+        vulnerabilities: 0,
+        severity: 'None',
+        scanTypes: currentScan.selectedScanTypes || []
       };
       setScanHistory(prev => [errorScan, ...prev.slice(0, 9)]);
       setCurrentScan(null);
@@ -54,16 +70,25 @@ const Index = () => {
     }
   };
 
+  const handleViewResults = (scanId) => {
+    const scan = scanHistory.find(s => s.id === scanId);
+    if (scan) {
+      setActiveTab("results");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 p-4 transition-colors">
+      <DarkModeToggle />
+      
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <Shield className="h-8 w-8 text-blue-600" />
-            <h1 className="text-4xl font-bold text-gray-900">AegisScan</h1>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">AegisScan</h1>
           </div>
-          <p className="text-xl text-gray-600">Advanced Web Vulnerability Scanner</p>
+          <p className="text-xl text-gray-600 dark:text-gray-300">Advanced Web Vulnerability Scanner</p>
         </div>
 
         {/* Dashboard Stats */}
@@ -121,7 +146,7 @@ const Index = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-5 bg-white dark:bg-gray-800 shadow-sm">
             <TabsTrigger value="scan" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               New Scan
@@ -138,6 +163,10 @@ const Index = () => {
               <AlertTriangle className="h-4 w-4" />
               History
             </TabsTrigger>
+            <TabsTrigger value="tools" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Tools
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="scan" className="mt-6">
@@ -145,13 +174,21 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="progress" className="mt-6">
-            {currentScan && (
-              <ScanProgress 
-                scan={currentScan} 
-                onComplete={handleScanComplete}
-                onError={handleScanError}
+            <div className="space-y-6">
+              {currentScan && (
+                <ScanProgress 
+                  scan={currentScan} 
+                  onComplete={handleScanComplete}
+                  onError={handleScanError}
+                />
+              )}
+              
+              <LiveScanTerminal 
+                isScanning={!!currentScan}
+                scanType={currentScan?.selectedScanTypes?.join(', ') || 'Unknown'}
+                targetUrl={currentScan?.targetUrl || ''}
               />
-            )}
+            </div>
           </TabsContent>
 
           <TabsContent value="results" className="mt-6">
@@ -162,10 +199,15 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="history" className="mt-6">
-            <RecentScans 
+            <ScanHistory 
               scans={scanHistory}
               onRescan={handleScanStart}
+              onViewResults={handleViewResults}
             />
+          </TabsContent>
+
+          <TabsContent value="tools" className="mt-6">
+            <ToolAvailabilityCheck />
           </TabsContent>
         </Tabs>
       </div>
