@@ -6,8 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-import { Globe, Database, Target, FileText, Settings, Shield, Bug } from "lucide-react";
+import { Globe, Database, Target, FileText, Settings, Shield, Bug, ChevronDown, ChevronUp } from "lucide-react";
+import AdvancedScanConfig from "./AdvancedScanConfig";
 
 const ScanForm = ({ onScanStart }) => {
   const { toast } = useToast();
@@ -31,6 +33,8 @@ const ScanForm = ({ onScanStart }) => {
     threads: 10
   });
 
+  const [advancedConfig, setAdvancedConfig] = useState({});
+  const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateUrl = (url) => {
@@ -95,7 +99,8 @@ const ScanForm = ({ onScanStart }) => {
       const scanConfig = {
         ...formData,
         selectedScanTypes,
-        selectedReportFormats
+        selectedReportFormats,
+        advancedConfig // Include advanced configuration
       };
 
       const scanTypeNames = {
@@ -105,10 +110,23 @@ const ScanForm = ({ onScanStart }) => {
       };
 
       const selectedNames = selectedScanTypes.map(type => scanTypeNames[type]).join(", ");
+      
+      // Enhanced toast message for advanced features
+      let scanDescription = `Scanning ${formData.targetUrl} for ${selectedNames} vulnerabilities`;
+      
+      if (advancedConfig.enableSubdomainScan) {
+        scanDescription += " with subdomain enumeration";
+      }
+      if (advancedConfig.enableCrawling) {
+        scanDescription += " and website crawling";
+      }
+      if (advancedConfig.enableAuthentication) {
+        scanDescription += " on authenticated pages";
+      }
 
       toast({
-        title: "Security Scan Started",
-        description: `Scanning ${formData.targetUrl} for ${selectedNames} vulnerabilities...`
+        title: "Advanced Security Scan Started",
+        description: scanDescription + "..."
       });
 
       onScanStart(scanConfig);
@@ -170,7 +188,6 @@ const ScanForm = ({ onScanStart }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Scan Types */}
               <Card className="border-2 border-blue-100">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg">
@@ -217,7 +234,6 @@ const ScanForm = ({ onScanStart }) => {
                 </CardContent>
               </Card>
 
-              {/* Report Formats */}
               <Card className="border-2 border-gray-100">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg">
@@ -261,7 +277,33 @@ const ScanForm = ({ onScanStart }) => {
               </Card>
             </div>
 
-            {/* Advanced Settings - Only show if SQL Injection is selected */}
+            {/* Advanced Configuration Section */}
+            <Collapsible open={showAdvancedConfig} onOpenChange={setShowAdvancedConfig}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-between bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 hover:from-blue-100 hover:to-purple-100"
+                >
+                  <span className="flex items-center gap-2">
+                    <Settings className="h-4 w-4 text-blue-600" />
+                    Advanced Scan Features
+                  </span>
+                  {showAdvancedConfig ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-4">
+                <AdvancedScanConfig
+                  onConfigChange={setAdvancedConfig}
+                  initialConfig={advancedConfig}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+
             {formData.scanTypes.sqli && (
               <Card className="border-2 border-gray-100">
                 <CardHeader className="pb-3">
@@ -353,12 +395,12 @@ const ScanForm = ({ onScanStart }) => {
               {isSubmitting ? (
                 <>
                   <Target className="mr-2 h-5 w-5 animate-spin" />
-                  Starting Security Scan...
+                  Starting Advanced Security Scan...
                 </>
               ) : (
                 <>
                   <Shield className="mr-2 h-5 w-5" />
-                  Start Vulnerability Scan
+                  Start Advanced Vulnerability Scan
                 </>
               )}
             </Button>
@@ -372,10 +414,11 @@ const ScanForm = ({ onScanStart }) => {
           <div className="flex items-start gap-3">
             <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
             <div>
-              <h4 className="font-semibold text-blue-900 mb-1">AegisScan Requirements</h4>
+              <h4 className="font-semibold text-blue-900 mb-1">AegisScan Advanced Requirements</h4>
               <p className="text-sm text-blue-700">
                 SQLMap: <code className="bg-blue-100 px-1 rounded">pip install sqlmap</code> | 
-                XSStrike: Download from GitHub and place in tools directory | 
+                XSStrike: Download from GitHub | 
+                Sublist3r: <code className="bg-blue-100 px-1 rounded">pip install sublist3r</code> | 
                 CSRF: Built-in analyzer
               </p>
             </div>
