@@ -11,6 +11,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Globe, Database, Target, FileText, Settings, Shield, Bug, ChevronDown, ChevronUp } from "lucide-react";
 import AdvancedScanConfig from "./AdvancedScanConfig";
 
+interface AdvancedConfig {
+  enableSubdomainScan?: boolean;
+  enableCrawling?: boolean;
+  enableAuthentication?: boolean;
+  [key: string]: any;
+}
+
 const ScanForm = ({ onScanStart }) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
@@ -33,7 +40,11 @@ const ScanForm = ({ onScanStart }) => {
     threads: 10
   });
 
-  const [advancedConfig, setAdvancedConfig] = useState({});
+  const [advancedConfig, setAdvancedConfig] = useState<AdvancedConfig>({
+    enableSubdomainScan: false,
+    enableCrawling: false,
+    enableAuthentication: false
+  });
   const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
