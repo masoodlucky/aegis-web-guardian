@@ -16,9 +16,15 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    navigate('/dashboard');
+    return null;
+  }
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -47,7 +53,8 @@ const Login = () => {
     setLoading(true);
     
     try {
-      const success = await login(email, password);
+      const { success, error } = await login(email, password);
+      
       if (success) {
         toast({
           title: "Login successful",
@@ -57,7 +64,7 @@ const Login = () => {
       } else {
         toast({
           title: "Login failed",
-          description: "Invalid email or password",
+          description: error || "Invalid email or password",
           variant: "destructive",
         });
       }

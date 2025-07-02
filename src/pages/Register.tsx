@@ -22,9 +22,15 @@ const Register = () => {
     confirmPassword?: string; 
   }>({});
   
-  const { register } = useAuth();
+  const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    navigate('/dashboard');
+    return null;
+  }
 
   const validateForm = () => {
     const newErrors: { 
@@ -63,17 +69,18 @@ const Register = () => {
     setLoading(true);
     
     try {
-      const success = await register(email, password);
+      const { success, error } = await register(email, password);
+      
       if (success) {
         toast({
           title: "Registration successful",
-          description: "Welcome to AegisScan!",
+          description: "Welcome to AegisScan! Please check your email to verify your account.",
         });
         navigate('/dashboard');
       } else {
         toast({
           title: "Registration failed",
-          description: "Email might already be in use",
+          description: error || "Unable to create account",
           variant: "destructive",
         });
       }
